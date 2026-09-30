@@ -1,0 +1,6 @@
+sim/*.vvp
+sim/*.vcd
+sim/*.log
+*.out
+*.fst
+*.gtkw
