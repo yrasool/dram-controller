@@ -1,0 +1,56 @@
+name: simulate
+
+# Every push runs the full verification suite: both controllers must pass all
+# timing and data checks, and the bug-injection build must still FAIL -- a
+# checker that stops catching the injected bug is itself a regression.
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verilog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y iverilog
+
+      - name: Single-bank controller
+        run: make sim | tee sim.log
+
+      - name: Assert single-bank passed
+        run: grep -q "OVERALL: PASS" sim.log
+
+      - name: Multi-bank + FR-FCFS controller
+        run: make mb | tee mb.log
+
+      - name: Assert multi-bank passed
+        run: grep -q "OVERALL: PASS" mb.log
+
+      - name: Bug injection must be caught
+        run: make broken
+
+      - name: Configuration sweep
+        run: make compare NREQ=200 | tee compare.log
+
+      - name: Assert no configuration failed
+        run: |
+          if grep -q "FAIL(" compare.log; then
+            echo "A configuration in the sweep failed its timing checks."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulation-logs
+          path: |
+            sim.log
+            mb.log
+            compare.log
