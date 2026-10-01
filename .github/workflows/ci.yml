@@ -25,13 +25,15 @@ jobs:
         run: make sim | tee sim.log
 
       - name: Assert single-bank passed
-        run: grep -q "OVERALL: PASS" sim.log
+        run: |
+          grep -q "OVERALL: PASS" sim.log
 
       - name: Multi-bank + FR-FCFS controller
         run: make mb | tee mb.log
 
       - name: Assert multi-bank passed
-        run: grep -q "OVERALL: PASS" mb.log
+        run: |
+          grep -q "OVERALL: PASS" mb.log
 
       - name: Bug injection must be caught
         run: make broken
